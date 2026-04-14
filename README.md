@@ -17,7 +17,7 @@ Catppuccin Mocha-themed terminal configuration, managed by [chezmoi](https://www
 
 ```bash
 # New machine — install chezmoi and apply dotfiles in one command
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply henning/dotfiles
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply mkl/dotfiles
 ```
 
 On first run, chezmoi will prompt for a short hostname (e.g. `mac_mini`, `macbook`) used in the starship prompt and tmux nested-session toggle.
