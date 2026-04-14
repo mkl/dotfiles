@@ -16,6 +16,7 @@ fi
 echo "==> Installing packages via Homebrew..."
 brew install --quiet tmux starship jq lazygit yazi
 brew install --quiet --cask font-jetbrains-mono-nerd-font 2>/dev/null || true
+brew install --quiet --cask wezterm 2>/dev/null || true
 
 {{ else -}}
 # --- Linux (apt + direct downloads) ---
@@ -72,7 +73,17 @@ if [ ! -d "${TPM_DIR}" ]; then
 fi
 
 # Install tmux plugins (Catppuccin etc.)
+# Source config first so TPM sees the plugin declarations
 echo "==> Installing tmux plugins..."
-"${TPM_DIR}/bin/install_plugins" >/dev/null 2>&1 || true
+tmux start-server 2>/dev/null || true
+tmux source-file ~/.tmux.conf 2>/dev/null || true
+"${TPM_DIR}/bin/install_plugins" 2>&1 || true
+tmux kill-server 2>/dev/null || true
+
+# --- Claude Code statusline ---
+if command -v claude &>/dev/null; then
+  echo "==> Configuring Claude Code statusline..."
+  claude config set statusLine.command "/bin/zsh ~/.claude/statusline.sh" 2>/dev/null || true
+fi
 
 echo "==> Done!"

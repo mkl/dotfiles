@@ -22,7 +22,7 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply mkl/dotfiles
 
 On first run, chezmoi will prompt for a short hostname (e.g. `mac_mini`, `macbook`) used in the starship prompt and tmux nested-session toggle.
 
-The bootstrap script automatically installs: tmux, TPM + Catppuccin plugin, starship, jq, lazygit, yazi, and JetBrains Mono Nerd Font.
+The bootstrap script automatically installs: tmux, TPM + Catppuccin plugin, starship, jq, lazygit, yazi, JetBrains Mono Nerd Font, and WezTerm (macOS). It also configures the Claude Code statusline if `claude` is on PATH.
 
 ## Update
 
