@@ -1,0 +1,78 @@
+#!/bin/bash
+# Bootstrap dependencies for dotfiles
+# Runs automatically on `chezmoi apply` when this script changes
+set -euo pipefail
+
+echo "==> Installing dotfile dependencies..."
+
+# Detect OS
+{{ if eq .chezmoi.os "darwin" -}}
+# --- macOS (Homebrew) ---
+if ! command -v brew &>/dev/null; then
+  echo "==> Installing Homebrew..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+echo "==> Installing packages via Homebrew..."
+brew install --quiet tmux starship jq lazygit yazi
+brew install --quiet --cask font-jetbrains-mono-nerd-font 2>/dev/null || true
+
+{{ else -}}
+# --- Linux (apt + direct downloads) ---
+if command -v apt-get &>/dev/null; then
+  echo "==> Installing packages via apt..."
+  sudo apt-get update -qq
+  sudo apt-get install -y -qq tmux git curl unzip jq
+fi
+
+# Starship
+if ! command -v starship &>/dev/null; then
+  echo "==> Installing starship..."
+  curl -fsSL https://starship.rs/install.sh | sh -s -- --yes
+fi
+
+# Lazygit
+if ! command -v lazygit &>/dev/null; then
+  echo "==> Installing lazygit..."
+  LAZYGIT_VERSION=$(curl -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+  curl -fsSL "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" \
+    | sudo tar -xz -C /usr/local/bin lazygit
+fi
+
+# Yazi
+if ! command -v yazi &>/dev/null; then
+  echo "==> Installing yazi..."
+  YAZI_VERSION=$(curl -fsSL https://api.github.com/repos/sxyazi/yazi/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+  curl -fsSL "https://github.com/sxyazi/yazi/releases/download/v${YAZI_VERSION}/yazi-x86_64-unknown-linux-gnu.zip" -o /tmp/yazi.zip
+  unzip -o /tmp/yazi.zip -d /tmp/yazi
+  sudo cp /tmp/yazi/yazi-x86_64-unknown-linux-gnu/yazi /usr/local/bin/yazi
+  sudo cp /tmp/yazi/yazi-x86_64-unknown-linux-gnu/ya /usr/local/bin/ya
+  sudo chmod 755 /usr/local/bin/yazi /usr/local/bin/ya
+  rm -rf /tmp/yazi /tmp/yazi.zip
+fi
+
+# JetBrains Mono Nerd Font
+FONT_DIR="${HOME}/.local/share/fonts"
+if [ ! -f "${FONT_DIR}/JetBrainsMonoNerdFont-Regular.ttf" ]; then
+  echo "==> Installing JetBrains Mono Nerd Font..."
+  mkdir -p "${FONT_DIR}"
+  FONT_VERSION=$(curl -fsSL https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest | jq -r '.tag_name')
+  curl -fsSL "https://github.com/ryanoasis/nerd-fonts/releases/download/${FONT_VERSION}/JetBrainsMono.zip" -o /tmp/JetBrainsMono.zip
+  unzip -o /tmp/JetBrainsMono.zip -d "${FONT_DIR}" '*.ttf'
+  rm /tmp/JetBrainsMono.zip
+  fc-cache -f "${FONT_DIR}"
+fi
+{{ end -}}
+
+# --- TPM (Tmux Plugin Manager) — all platforms ---
+TPM_DIR="${HOME}/.tmux/plugins/tpm"
+if [ ! -d "${TPM_DIR}" ]; then
+  echo "==> Installing TPM..."
+  git clone --depth 1 https://github.com/tmux-plugins/tpm "${TPM_DIR}"
+fi
+
+# Install tmux plugins (Catppuccin etc.)
+echo "==> Installing tmux plugins..."
+"${TPM_DIR}/bin/install_plugins" >/dev/null 2>&1 || true
+
+echo "==> Done!"

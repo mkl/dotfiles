@@ -1,0 +1,52 @@
+# Managed by chezmoi - Catppuccin Mocha TMUX config
+set -g default-terminal "tmux-256color"
+set -g history-limit 50000
+set -g mouse on
+set -g set-clipboard on
+setw -g mode-keys vi
+setw -g automatic-rename off
+set -g allow-rename off
+
+# Prevent TUI apps (Claude Code) from clearing scrollback via \e[3J
+set -sa terminal-overrides ',*:E3@'
+
+# Pass through OSC 8 hyperlinks so WezTerm can make URLs clickable
+set -ga terminal-features ',*:hyperlinks'
+
+# Allow image preview passthrough (yazi + WezTerm iTerm2 protocol)
+set -g allow-passthrough on
+set -ga update-environment TERM
+set -ga update-environment TERM_PROGRAM
+
+# Catppuccin
+set -g @plugin 'tmux-plugins/tpm'
+set -g @plugin 'catppuccin/tmux'
+set -g @catppuccin_flavor 'mocha'
+set -g @catppuccin_window_status_style "rounded"
+set -g @catppuccin_window_text '#{?#{==:#{pane_title},#{host}},#{=15:window_name},#{=15:pane_title}}'
+set -g @catppuccin_window_current_text '#{?#{==:#{pane_title},#{host}},#{=15:window_name},#{=15:pane_title}}'
+
+# F12 toggle for nested TMUX sessions
+bind -T root F12 \
+  set prefix None \;\
+  set key-table off \;\
+  set status-style "bg=colour238,fg=colour245" \;\
+  set window-status-current-style "bg=colour239,fg=colour245" \;\
+  set status-left "#[dim] {{ .hostname }} #[default] " \;\
+  if -F '#{pane_in_mode}' 'send-keys -X cancel' \;\
+  refresh-client -S
+
+bind -T off F12 \
+  set -u prefix \;\
+  set -u key-table \;\
+  set -u status-style \;\
+  set -u window-status-current-style \;\
+  set -u status-left \;\
+  refresh-client -S
+
+# keep this line at the very bottom
+run '~/.tmux/plugins/tpm/tpm'
+
+# Status line config (must be after TPM/catppuccin loads)
+set -g status-left ""
+set -g status-right ""

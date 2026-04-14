@@ -1,0 +1,5 @@
+# Chezmoi config - prompted on `chezmoi init`
+{{- $hostname := promptStringOnce . "hostname" "Short hostname for prompt/status (e.g. mac_mini, macbook)" -}}
+
+[data]
+  hostname = {{ $hostname | quote }}
