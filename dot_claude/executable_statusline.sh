@@ -11,6 +11,10 @@ DATA=$(cat)
 MODEL=$(echo "$DATA" | jq -r '.model.display_name // "Claude"')
 USED_PCT=$(echo "$DATA" | jq -r '.context_window.used_percentage // 0')
 CWD=$(echo "$DATA" | jq -r '.cwd // ""')
+SESS_PCT=$(echo "$DATA" | jq -r '.rate_limits.five_hour.used_percentage // empty')
+WEEK_PCT=$(echo "$DATA" | jq -r '.rate_limits.seven_day.used_percentage // empty')
+SESS_PCT=${SESS_PCT%%.*}
+WEEK_PCT=${WEEK_PCT%%.*}
 # Uncommitted git changes (staged + unstaged)
 if [ -n "$CWD" ]; then
   DIFF_STAT=$(git -C "$CWD" diff --numstat HEAD 2>/dev/null | awk '{a+=$1; d+=$2} END {print a+0, d+0}')
@@ -52,6 +56,16 @@ SURF0_FG=$(fg256 236);  SURF0_BG=$(bg256 236)   # #313244 → 236
 CRUST_FG=$(fg256 234)                            # #11111b → 234
 TEXT_FG=$(fg256 252)                             # #cdd6f4 → 252
 
+# Severity → foreground color (blue < 60, yellow 60–79, red ≥ 80, gray if absent)
+sev_fg() {
+  local p=$1
+  if [ -z "$p" ]; then echo 244; return; fi
+  if [ "$p" -ge 80 ]; then echo 211
+  elif [ "$p" -ge 60 ]; then echo 223
+  else echo 111
+  fi
+}
+
 # Context segment color shifts: blue -> yellow -> red based on usage
 if [ "$PCT" -ge 80 ]; then
   CTX_FG=$(fg256 211); CTX_BG=$(bg256 211)   # red    #f38ba8 → 211
@@ -60,6 +74,9 @@ elif [ "$PCT" -ge 60 ]; then
 else
   CTX_FG=$(fg256 111); CTX_BG=$(bg256 111)   # blue   #89b4fa → 111
 fi
+
+SESS_SEV_FG=$(fg256 "$(sev_fg "$SESS_PCT")")
+WEEK_SEV_FG=$(fg256 "$(sev_fg "$WEEK_PCT")")
 
 SEP=$'\ue0b0'
 CAP=$'\ue0b6'
@@ -91,5 +108,17 @@ fi
 
 printf '%s' \
   "${TEAL_BG}${CRUST_FG} +${LINES_ADD} -${LINES_DEL} ${RST}" \
-  "${TEAL_FG}${END}${RST}"
+  "${SURF0_BG}${TEAL_FG}${SEP}${RST}"
+
+if [ -n "$SESS_PCT" ]; then
+  printf '%s' "${SURF0_BG}${SESS_SEV_FG} 󰥔 ${SESS_PCT}% ${RST}"
+fi
+if [ -n "$WEEK_PCT" ]; then
+  printf '%s' "${SURF0_BG}${WEEK_SEV_FG} 󰃭 ${WEEK_PCT}% ${RST}"
+fi
+if [ -z "$SESS_PCT" ] && [ -z "$WEEK_PCT" ]; then
+  printf '%s' "${SURF0_BG}${TEXT_FG} 󰥔 -- 󰃭 -- ${RST}"
+fi
+
+printf '%s' "${SURF0_FG}${END}${RST}"
 echo
